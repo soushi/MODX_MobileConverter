@@ -25,8 +25,7 @@
   PHP4.xでも動くようになりました
     ※参考：http://modxcms.com/forums/index.php/topic,23621.msg152299.html#msg152299
 ・MySQL 5.0.41
-
-※画像を扱うためにはPHPにgbライブラリが組み込まれている必要があります。
+・画像を扱うためにはPHPにgbライブラリが組み込まれている必要があります。
   
 
 [インストール・設定方法]
@@ -311,6 +310,11 @@ Opera:Convert charset
        できます。また数字は必ず1から始め、連番になっている必要があります。
 
 
+  &exceptTarget
+    …MobileConverterを無効にしたいドキュメントIDを入力します。
+      ここにドキュメントIDを書かれたドキュメントはテンプレートの変更等一切の機能
+      が無効になります。
+      ドキュメントIDは「,(コンマ)」区切りで複数入力する事ができます。
 
 
 [注意事項]
@@ -359,6 +363,10 @@ Opera:Convert charset
   
 
 [更新履歴]
+2008/12/25 - 1.12
+  ・&exceptTarget設定を追加
+     - Special thanks to kazuikeさん
+
 2008/04/17 - 1.11
   ・readmeの間違いを修正
   ・php4で動作するように変更(stripos,headers_list関数を使わないようにした)

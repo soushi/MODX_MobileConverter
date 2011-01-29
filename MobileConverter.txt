@@ -3,8 +3,8 @@
 //  MobileConverter for MODx
 //
 //  Author  : soushi
-//  Version : 1.11
-//  Date    : 2008/4/17
+//  Version : 1.12
+//  Date    : 2008/12/25
 //
 //  License : GPL
 //
@@ -115,9 +115,16 @@ switch ($modx->Event->name){
  case 'OnWebPageInit': 
 
    $id = $modx->documentIdentifier; //Current document id
+   // Check except document
+   if( $exceptTarget != '' ){
+     $exceptTargets=split(',',$exceptTarget);
+     if( in_array($id,$exceptTargets) )
+       break;
+   }
+
    $mcFlag= false;
-   
    $targetDoc = isset($targetDoc) && $targetDoc != '' ? $targetDoc : 0;
+
    if( $targetDoc === 0 || $targetDoc == '0'){
         $mcFlag= true;
    }else{
@@ -129,7 +136,6 @@ switch ($modx->Event->name){
 	 $mcFlag=true;
      }
    }
-
    if( $mcFlag == true)
      addEvent('OnLoadWebDocument', $MyName);
    
