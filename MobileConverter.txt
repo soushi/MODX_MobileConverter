@@ -1,0 +1,134 @@
+//------------------------------------------------------------------------
+//
+//  MobileConverter for MODx
+//
+//  Author  : soushi
+//  Version : 1.00
+//  Date    : 2008/3/6
+//
+//  License : GPL
+//
+//------------------------------------------------------------------------
+
+//--------This plugin name
+$MyName='MobileConverter';
+
+//------------------------------------------------------ Function
+//-----------------------------------------------------
+//  add Event function
+//
+//  $fEvent  : string : event name
+//  $fPlugin : string : plugin name
+//  return   : none   :
+//
+// *** information ***
+// Not executed $modx->addEventListener for BUG(MODx<=0.9.6.2)
+//
+//-----------------------------------------------------
+if (!function_exists('addEvent')){
+  function addEvent($fEvent,$fPlugin){
+    global $modx;
+
+    $el= &$modx->pluginEvent[$fEvent];
+    if (empty ($el)){
+      $modx->pluginEvent[$fEvent]= array ();
+      $el= &$modx->pluginEvent[$fEvent];
+    }
+    array_push($el, $fPlugin);
+  }
+}
+
+//------------------------------------------------------ Main
+switch ($modx->Event->name){
+
+ case 'OnWebPageInit': //Check target
+   
+   $id = $modx->documentIdentifier; //Current document id
+   $mcFlag= false;
+   
+   $targetDoc = isset($targetDoc) && $targetDoc != '' ? $targetDoc : 0;
+   if( $targetDoc === 0 || $targetDoc == '0'){
+        $mcFlag= true;
+   }else{
+     $targetDocs=split(',',$targetDoc);
+
+     $parentIds =$modx->getParentIds($id, 100, array($id));
+     foreach ($parentIds as $val){
+       if( in_array($val,$targetDocs) )
+	 $mcFlag=true;
+     }
+   }
+
+   if( $mcFlag == true)
+     addEvent('OnLoadWebDocument', $MyName);
+
+   break;
+
+ case 'OnLoadWebDocument':
+   
+   //Disable cache
+   $modx->documentObject['cacheable'] = 0;
+   //User Agent
+   $currentUA = $_SERVER['HTTP_USER_AGENT'];
+
+   //Set values
+   $enableConvertCharset = $alwaysConvertCharset == 'yes' ? true : false;
+   $i=1;
+   while( isset(${'userAgent'.$i}) ){
+     $userAgent[] = ${'userAgent'.$i};
+     $switchTemplate[] = ${'switchTemplate'.$i};
+     if( ${'convertCharset'.$i} == 'no' ) // default yes
+       $convertCharset[] = false;
+     else
+       $convertCharset[] = true;
+     $i++;
+   }
+
+   foreach ($userAgent as $key => $val){
+     $userAgentArray = split(',',$val);
+     foreach ($userAgentArray  as $ua)
+       if( stripos($currentUA , $ua) !== false){
+	 $tbl = $modx->getFullTableName("site_templates");
+	 $whr = 'templatename=\''.$switchTemplate[$key].'\'';
+	 if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
+	   $resource = $modx->fetchRow($rs);
+	   $modx->documentObject['template'] = $resource['id'];
+	   $this->documentContent =  $resource['content'];
+	 }
+	 if( $convertCharset[$key] )
+	   $enableConvertCharset = true;
+	 else
+	   $enableConvertCharset = false;
+
+	 break 2;
+       }
+   }
+
+   if( $enableConvertCharset ){
+     addEvent('OnWebPagePrerender', $MyName);
+   }
+
+   break;
+
+ case 'OnWebPagePrerender':
+   $mobileCharset = isset($mobileCharset) && $mobileCharset != '' ? $mobileCharset : 'Shift_JIS';
+
+   // Change HTTP header's Content-Type
+   $addHeader='';
+   $headers=headers_list();
+   foreach($headers as $val)
+     if( strpos($val,'Content-Type:') !== false ){
+       $addHeader=substr($val,0,strrpos($val,'=')+1) . $mobileCharset;
+       break;
+     }
+   header($addHeader,true);
+
+   // Shift_JIS -> SJIS
+   if( stripos($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
+
+   $modx->documentOutput = mb_convert_encoding($modx->documentOutput,$mobileCharset,$modx->config['modx_charset']);
+
+   break;
+   
+}
+
