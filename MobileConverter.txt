@@ -3,8 +3,8 @@
 //  MobileConverter for MODx
 //
 //  Author  : soushi
-//  Version : 1.00
-//  Date    : 2008/3/6
+//  Version : 1.10
+//  Date    : 2008/3/23
 //
 //  License : GPL
 //
@@ -12,6 +12,26 @@
 
 //--------This plugin name
 $MyName='MobileConverter';
+
+// Template
+$TemplateNotFound=<<<_TPLNOTFOUND_
+<html>
+<head>
+  <title>[(site_name)] | [*pagetitle*]</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=[+charset+]" />
+  <base href="[(site_url)]" />
+</head>
+<body>
+<h2>Template not found! -> [+template+]</h2>
+/* Check the setting of plugin;-) */
+</body>
+</html>
+_TPLNOTFOUND_;
+
+//Image ext
+$imgExts=array('jpe?g','gif','png','gif');
+//image filename prefix
+$imgPrefix='.mcthumb.'; 
 
 //------------------------------------------------------ Function
 //-----------------------------------------------------
@@ -38,11 +58,62 @@ if (!function_exists('addEvent')){
   }
 }
 
+//-----------------------------------------------------
+//  Image chaange function("preg_replace_callback" function's callback)
+//
+//  $fMt   : array  : replace string
+//  return : string : replace string
+//
+//-----------------------------------------------------
+if (!function_exists('MC_ChangeImgFilename')){
+  function MC_ChangeImgFilename($fMt){
+    global $modx;
+
+    $mcConf = $modx->config['MobileConverterConf'];
+    if(! preg_match('/src=["\']?([^"\' ]+?)?([^\/"\' ]+)\.([^\.\/"\' >]+)/i',$fMt[0],$mt) )
+      return $fMt[0];
+    $imgPath=$mt[1];
+    $imgName=$mt[2];
+    $imgExt=$mt[3];
+
+    //Ext check
+    $imgcheck=false;
+    foreach( $mcConf['imgExts'] as $val)
+      if( preg_match('/'.$val.'$/i',$imgExt) ){
+	$imgcheck=true;
+	break;
+      }
+    if($imgcheck != true ) return $fMt[0];
+
+    //filepath check
+    $modx->logEvent(1, 1, $imgPath .':'.$mcConf['targetImgPath'], 'MobileConverter;debug6');
+    if( $mcConf['targetImgPath'] != '' && strstr($imgPath,$mcConf['targetImgPath']) === false)
+      return $fMt[0];
+
+    if( $mcConf['thumbImgPath'] === false ){
+      $newImg = $mt[1] . $mcConf['imgPrefix'] . $imgName=$mt[2] .'.'. $mcConf['switchImgType'];
+    }else{
+      $newImg = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . str_replace('/','_',$mt[1]).$imgName=$mt[2] .'.'. $mcConf['switchImgType'];
+    }
+
+    $newA = preg_replace('/src=["\']?[^"\' >]+["\']?/i',"src='$newImg'",$fMt[0]);
+    //erase height and width 
+    $newA = preg_replace('/width=[^ >]+/i','',$newA);
+    $newA = preg_replace('/height=[^ >]+/i','',$newA);
+    $modx->logEvent(1, 1, $newA , 'MobileConverter;debug5');
+
+    return $newA;
+
+  }
+}
+
+
 //------------------------------------------------------ Main
 switch ($modx->Event->name){
 
- case 'OnWebPageInit': //Check target
-   
+  //--------------------------------------------------------------Check target
+ case 'OnWebPageInit': 
+
    $id = $modx->documentIdentifier; //Current document id
    $mcFlag= false;
    
@@ -61,9 +132,10 @@ switch ($modx->Event->name){
 
    if( $mcFlag == true)
      addEvent('OnLoadWebDocument', $MyName);
-
+   
    break;
 
+   //--------------------------------------------------------------Change template and set convert event
  case 'OnLoadWebDocument':
    
    //Disable cache
@@ -71,64 +143,177 @@ switch ($modx->Event->name){
    //User Agent
    $currentUA = $_SERVER['HTTP_USER_AGENT'];
 
-   //Set values
+   //Set convart charset
    $enableConvertCharset = $alwaysConvertCharset == 'yes' ? true : false;
+
+   //Check agent
    $i=1;
    while( isset(${'userAgent'.$i}) ){
-     $userAgent[] = ${'userAgent'.$i};
-     $switchTemplate[] = ${'switchTemplate'.$i};
-     if( ${'convertCharset'.$i} == 'no' ) // default yes
-       $convertCharset[] = false;
-     else
-       $convertCharset[] = true;
+     $userAgents = ${'userAgent'.$i};
+     if( $userAgents == '' ) continue;
+     $userAgents = split(',',$userAgents);
+     foreach ($userAgents  as $userAgent)
+       if( stripos($currentUA , $userAgent) !== false){
+
+	 $switchTemplate = ${'switchTemplate'.$i};
+	 $switchImgType  = ${'switchImgType'.$i};
+	 if( ${'convertCharset'.$i} == 'no' ) // default yes
+	   $convertCharset = false;
+	 else
+	   $convertCharset = true;
+
+	 $tbl = $modx->getFullTableName("site_templates");
+	 $whr = 'templatename=\''.$switchTemplate.'\'';
+	 if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
+	   if( $resource = $modx->fetchRow($rs) ){
+	     $modx->documentObject['template'] = $resource['id'];
+	     $this->documentContent =  $resource['content'];
+	   }else{
+	     $modx->logEvent(1, 1, 'Template not found:'.$switchTemplate, 'MobileConverter');
+	     $bf= array('[+charset+]','[+template+]');
+	     $af= array($modx->config['modx_charset'],$switchTemplate);
+	     $TemplateNotFound = str_replace($bf,$af,$TemplateNotFound);
+	     $this->documentContent =  $TemplateNotFound;	     
+	   }
+	   if( $convertCharset)
+	     $enableConvertCharset = true;
+	   else
+	     $enableConvertCharset = false;
+	 }
+	 break 2;
+       }
      $i++;
    }
 
-   foreach ($userAgent as $key => $val){
-     $userAgentArray = split(',',$val);
-     foreach ($userAgentArray  as $ua)
-       if( stripos($currentUA , $ua) !== false){
-	 $tbl = $modx->getFullTableName("site_templates");
-	 $whr = 'templatename=\''.$switchTemplate[$key].'\'';
-	 if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
-	   $resource = $modx->fetchRow($rs);
-	   $modx->documentObject['template'] = $resource['id'];
-	   $this->documentContent =  $resource['content'];
-	 }
-	 if( $convertCharset[$key] )
-	   $enableConvertCharset = true;
-	 else
-	   $enableConvertCharset = false;
-
-	 break 2;
-       }
-   }
-
-   if( $enableConvertCharset ){
+   if( $enableConvertCharset == true || 
+       ( isset($switchImgType) && $switchImgType != '' )){
+     $mcConf['enableConvertCharset'] = $enableConvertCharset;
+     $mcConf['switchImgType'] = $switchImgType;
+     $mcConf['targetImgPath'] = isset($targetImgPath) ? $targetImgPath : false; //Target convert image path
+     $mcConf['thumbImgPath']  = isset($thumbImgPath) && $thumbImgPath != '' ? $thumbImgPath : false; //Thumbnail save path
+     $mcConf['imgExts'] = $imgExts;
+     $mcConf['imgPrefix'] = $imgPrefix;
+     $modx->config['MobileConverterConf'] = $mcConf; //Value transport next event.
      addEvent('OnWebPagePrerender', $MyName);
    }
 
    break;
 
+   //--------------------------------------------------------------Convert charset and change image
  case 'OnWebPagePrerender':
+   //Set value prev event
+   $mcConf = $modx->config['MobileConverterConf'];
+   //Set value
    $mobileCharset = isset($mobileCharset) && $mobileCharset != '' ? $mobileCharset : 'Shift_JIS';
 
-   // Change HTTP header's Content-Type
-   $addHeader='';
-   $headers=headers_list();
-   foreach($headers as $val)
-     if( strpos($val,'Content-Type:') !== false ){
-       $addHeader=substr($val,0,strrpos($val,'=')+1) . $mobileCharset;
+   //Change Image Path
+   if( $mcConf['targetImgPath'] !== false && $mcConf['switchImgType'] != '' ){
+     $modx->documentOutput = preg_replace_callback('/<img [^>]+>/i','MC_ChangeImgFilename',$modx->documentOutput);
+   }
+
+   // Convert charset
+   if( $mcConf['enableConvertCharset'] == true){
+     // Change HTTP header's Content-Type
+     $addHeader='';
+     $headers=headers_list();
+     foreach($headers as $val)
+       if( strpos($val,'Content-Type:') !== false ){
+	 $addHeader=substr($val,0,strrpos($val,'=')+1) . $mobileCharset;
+	 break;
+       }
+     header($addHeader,true);
+
+     // Shift_JIS -> SJIS     
+     if( stripos($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
+     
+     $modx->documentOutput = mb_convert_encoding($modx->documentOutput,$mobileCharset,$modx->config['modx_charset']);
+   }
+
+   break;
+
+   //--------------------------------------------------------------Upload image check
+ case 'OnFileManagerUpload': 
+
+   //Image check and get ext(jpg,jpeg,gif,png,gif)
+   $imgcheck=false;
+   foreach( $imgExts as $val)
+     if( preg_match('/'.$val.'$/i',$filename) ){
+       $imgcheck=true;
        break;
      }
-   header($addHeader,true);
+   if($imgcheck != true ) break;
 
-   // Shift_JIS -> SJIS
-   if( stripos($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
+   //set value
+   $targetImgPath = isset($targetImgPath) ? $targetImgPath : false; //Target convert image path
+   //Thumbnail save directory
+   if( isset($thumbImgPath) && $thumbImgPath != '' ){
+     $tmpImgPath=realpath($modx->config['filemanager_path'].$thumbImgPath);
+     if( $tmpImgPath === false){
+       $modx->logEvent(1, 1, 'Thumbnail save path not found:'.$thumbImgPath, 'MobileConverter');
+       break;
+     }else{
+       $thumbImgPath = $tmpImgPath;    //Thumbnail save directory
+     }
+   }else{
+     $thumbImgPath = '';
+   }
+   $MaxImgX = isset($MaxImgX) ? $MaxImgX : 0; //Max image size(X)
+   $MaxImgY = isset($MaxImgY) ? $MaxImgY : 0; //Max image size(Y)
+   $targetImgRealPath = realpath($modx->config['filemanager_path'] . $targetImgPath);
 
-   $modx->documentOutput = mb_convert_encoding($modx->documentOutput,$mobileCharset,$modx->config['modx_charset']);
+   // Check target directory
+   if( $targetImgPath === '' || strpos($filepath,$targetImgRealPath) !== false ){
+     $img=imagecreatefromstring(file_get_contents($filepath. '/'.$filename));
+     $filenamenoExt=preg_replace('/\.[^\.]+$/','',$filename);
 
+     //Set thumbnail save directory
+     if( $thumbImgPath != '' ){
+       $thumbFilenamenoExt=str_replace($modx->config['filemanager_path'],'',$filepath);
+       $thumbFilenamenoExt=$thumbImgPath.'/'.$imgPrefix.str_replace('/','_',$thumbFilenamenoExt).'_'.$filenamenoExt;
+       //$modx->logEvent(1, 1, 'filepath:'.$thumbFilenamenoExt, 'MbileConverter:debug');
+     }else{
+       $thumbFilenamenoExt=$filepath.'/'.$imgPrefix.$filenamenoExt;
+     }
+
+     //Resize image
+     $imgX = imagesx($img);
+     $imgY = imagesy($img);
+     $toX=0;
+     $toY=0;
+     if( $MaxImgX != 0 && $MaxImgX < $imgX ){
+       $toX = $MaxImgX;
+       $toY = (int)($imgY * ($MaxImgX / $imgX));
+     }
+     if( $MaxImgY != 0 && $MaxImgY < $imgY ){
+       $tmpX = (int)($imgX * ($MaxImgY / $imgY));
+       if( $MaxImgX > $tmpX ){
+	 $toX = $tmpX;
+	 $toY = $MaxImgY;
+       }
+     }
+     if( $toX != 0 && $toY != 0){
+       $newimg=imagecreatetruecolor($toX,$toY);       
+       imagecopyresampled($newimg,$img,0,0,0,0,$toX,$toY,$imgX,$imgY);
+       imagedestroy($img);
+       $img = $newimg;
+     }
+
+     // make png
+     if( function_exists('imagepng'))
+       if( ! imagepng($img,$thumbFilenamenoExt.'.png'))
+	 $modx->logEvent(1, 1, 'Failed make png image:'.$thumbFilenamenoExt.'.png', 'MbileConverter');
+
+     // make jpg
+     if( function_exists('imagejpeg'))
+       if( ! imagejpeg($img,$thumbFilenamenoExt.'.jpg'))
+	 $modx->logEvent(1, 1, 'Failed make jpg image:'.$thumbFilenamenoExt.'.jpg', 'MbileConverter');
+
+     // make gif
+     if( function_exists('imagegif'))
+       if( ! imagegif($img,$thumbFilenamenoExt.'.gif'))
+	 $modx->logEvent(1, 1, 'Failed make gif image:'.$thumbFilenamenoExt.'.gif', 'MbileConverter');
+
+   }
    break;
    
 }
-
