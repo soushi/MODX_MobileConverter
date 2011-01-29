@@ -1,4 +1,4 @@
-MobileConverter for MODx
+﻿MobileConverter for MODx
 
 [機能]
 ブラウザからのUser Agentを元に以下の変換を行います。
@@ -21,7 +21,9 @@ MobileConverter for MODx
 [動作確認環境]
 ・MODx0.9.6
   文字コード：UTF-8
-・PHP5.2.4(PHP4系は未検証)
+・PHP5.2.4
+  PHP4.xでも動くようになりました
+    ※参考：http://modxcms.com/forums/index.php/topic,23621.msg152299.html#msg152299
 ・MySQL 5.0.41
 
 ※画像を扱うためにはPHPにgbライブラリが組み込まれている必要があります。
@@ -201,9 +203,9 @@ Always conver charset
 &targetDoc=Target document IDs;string;0
 &userAgent1=Firefox:User Agent;string;Firefox
 &switchTemplate1=Firefox:Template;string;Firefox
-&convertCharset1=Firefox:Convert charset;list;yes,no;no &userAgent1=Opera:User Agent;string;Opera
-&switchTemplate1=Opera:Template;string;Opera
-&convertCharset1=Opera:Convert charset;list;yes,no;no
+&convertCharset1=Firefox:Convert charset;list;yes,no;no &userAgent2=Opera:User Agent;string;Opera
+&switchTemplate2=Opera:Template;string;Opera
+&convertCharset2=Opera:Convert charset;list;yes,no;no
 
 各項目の説明です。
 (既に前の例で説明している項目の説明は省きます)
@@ -239,7 +241,7 @@ Opera:Convert charset
 
 2.自動生成した画像の消去
   &thumbImgPathをしている場合はそのディレクトリ、指定していない場合は画像を
-  アップしたディレクトリに「.mcthumb.〜」という画像ファイルがあるのですべて
+  アップしたディレクトリに「.mcthumb.～」という画像ファイルがあるのですべて
   削除する。
 
 
@@ -357,6 +359,11 @@ Opera:Convert charset
   
 
 [更新履歴]
+2008/04/17 - 1.11
+  ・readmeの間違いを修正
+  ・php4で動作するように変更(stripos,headers_list関数を使わないようにした)
+     - Special thanks to min-oさん、MEGUさん
+
 2008/03/23 - 1.10
   ・MODxの管理画面から画像ファイルをアップする際、自動的にjpg、png、gifの3タイ
     プに変換して保存する機能を追加。

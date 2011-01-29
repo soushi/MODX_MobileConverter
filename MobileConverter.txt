@@ -3,8 +3,8 @@
 //  MobileConverter for MODx
 //
 //  Author  : soushi
-//  Version : 1.10
-//  Date    : 2008/3/23
+//  Version : 1.11
+//  Date    : 2008/4/17
 //
 //  License : GPL
 //
@@ -153,7 +153,8 @@ switch ($modx->Event->name){
      if( $userAgents == '' ) continue;
      $userAgents = split(',',$userAgents);
      foreach ($userAgents  as $userAgent)
-       if( stripos($currentUA , $userAgent) !== false){
+       //       if( stripos($currentUA , $userAgent) !== false){
+       if( stristr($currentUA , $userAgent) !== false){
 
 	 $switchTemplate = ${'switchTemplate'.$i};
 	 $switchImgType  = ${'switchImgType'.$i};
@@ -214,17 +215,22 @@ switch ($modx->Event->name){
    // Convert charset
    if( $mcConf['enableConvertCharset'] == true){
      // Change HTTP header's Content-Type
-     $addHeader='';
-     $headers=headers_list();
-     foreach($headers as $val)
-       if( strpos($val,'Content-Type:') !== false ){
-	 $addHeader=substr($val,0,strrpos($val,'=')+1) . $mobileCharset;
-	 break;
-       }
-     header($addHeader,true);
+     //------php4 is not support header_list() function
+     //$addHeader='';
+     //$headers=headers_list(); 
+     //foreach($headers as $val)
+     //  if( strpos($val,'Content-Type:') !== false ){
+     //   $addHeader=substr($val,0,strrpos($val,'=')+1) . $mobileCharset;
+     //   break;
+     //}
+     //header($addHeader,true);
+
+     $type= !empty($modx->contentTypes[$modx->documentIdentifier]) ? $modx->contentTypes[$modx->documentIdentifier] : "text/html";
+     header('Content-Type: ' . $type . '; charset=' . $mobileCharset,true);
 
      // Shift_JIS -> SJIS     
-     if( stripos($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
+     //if( stripos($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
+     if( stristr($mobileCharset , 'Shift_JIS') !== false) $mobileCharset = 'SJIS';
      
      $modx->documentOutput = mb_convert_encoding($modx->documentOutput,$mobileCharset,$modx->config['modx_charset']);
    }
