@@ -11,7 +11,6 @@ MobileConverter for MODx - readme.txt
   6.プラグイン設定例
   7.アンインストール
   8.注意事項
-  9.更新履歴
 
 [1.概要]
 ブラウザから送られてくる情報(User Agent等)を元に以下の処理を行います。
