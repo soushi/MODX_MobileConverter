@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------
 //
-//  MobileConverter for MODx
+//  MobileConverter for MODX
 //
 //  Author  : soushi
-//  Version : 2.00
-//  Date    : 2010/02/23
+//  Version : 2.01rc1
+//  Date    : 2011/09/18
 //
 //  License : GPL
 //
@@ -104,12 +104,18 @@ if (!function_exists('MC_ChangeImgFilename')){
     $realFileTime = filemtime($realFile); //ファイルの更新時間
 
     //パスの計算
-    if( $mcConf['thumbImgPath'] === false ){
-      $chgFile = $imgPath . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $imgName .'.'. $mcConf['imgType'];
+    if( isset($mcConf['imgNum'])){
+      $addNum = $mcConf['imgNum'].'_';
     }else{
-      $chgFile = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . str_replace('/','_',$imgPath).$imgName .'.'. $mcConf['imgType'];
+      $addNum = '';
     }
-    $realChgFile = realpath(MODX_BASE_PATH . $chgFile);
+    if( $mcConf['thumbImgPath'] === false ){
+      $chgFile = $imgPath . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . $imgName .'.'. $mcConf['imgType'];
+    }else{
+      $chgFile = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath).$imgName .'.'. $mcConf['imgType'];
+    }
+    //$realChgFile = realpath(MODX_BASE_PATH . $chgFile); //realpathでエラーがでるため一時コメントアウト
+    $realChgFile = MODX_BASE_PATH . $chgFile;
 
     //変換画像作成
     if(! is_file($realChgFile)  || is_file($realChgFile) && filemtime($realChgFile) < $realFileTime ){      
@@ -299,6 +305,14 @@ case 'OnLoadWebDocument':
 	$switchImgType  = ${'g'.$groupNo.'_'.$i.'_imgType'};
 	$switchCharset  = ${'g'.$groupNo.'_'.$i.'_charset'};
 	$switchEnableCC = ${'g'.$groupNo.'_'.$i.'_enableCharConv'};
+	if( isset(${'g'.$groupNo.'_'.$i.'_imgMaxX'})){
+	  $switchImgMaxX  = ${'g'.$groupNo.'_'.$i.'_imgMaxX'};
+	  $switchImgNum = $i;
+	}
+	if( isset(${'g'.$groupNo.'_'.$i.'_imgMaxY'})){
+	  $switchImgMaxY  = ${'g'.$groupNo.'_'.$i.'_imgMaxY'};
+	  $switchImgNum = $i;
+	}
 
 	$tbl = $modx->getFullTableName("site_templates");
 	$whr = 'templatename=\''.$switchTemplate.'\'';
@@ -344,11 +358,16 @@ case 'OnLoadWebDocument':
     $imgPath = isset( ${'g'.$groupNo.'_imgPath'} ) ? ${'g'.$groupNo.'_imgPath'} : $imgPath;
     $imgMaxX = isset($imgMaxX) && $imgMaxX != '' ? $imgMaxX : 0;
     $imgMaxX = isset( ${'g'.$groupNo.'_imgMaxX'} ) ? ${'g'.$groupNo.'_imgMaxX'} : $imgMaxX;
+    $imgMaxX = isset( $switchImgMaxX ) ? $switchImgMaxX : $imgMaxX;
     $imgMaxY = isset($imgMaxY) && $imgMaxY != '' ? $imgMaxY : 0;
     $imgMaxY = isset( ${'g'.$groupNo.'_imgMaxY'} ) ? ${'g'.$groupNo.'_imgMaxY'} : $imgMaxY;
+    $imgMaxY = isset( $switchImgMaxY ) ? $switchImgMaxY : $imgMaxY;
     $mcConf['imgPath'] = explode(',',$imgPath);
     $mcConf['imgMaxX'] = explode(',',$imgMaxX);
     $mcConf['imgMaxY'] = explode(',',$imgMaxY);
+    if( isset($switchImgNum)) {
+      $mcConf['imgNum'] = $switchImgNum;
+    }
 
     $mcConf['thumbImgPath'] = isset($thumbImgPath) && $thumbImgPath != '' ? $thumbImgPath : false; //Thumbnail save path
     $mcConf['thumbImgPath'] = isset(${'g'.$groupNo.'_thumbImgPath'}) ? ${'g'.$groupNo.'_thumbImgPath'} : $mcConf['thumbImgPath'];
