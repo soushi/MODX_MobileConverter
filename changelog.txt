@@ -3,6 +3,13 @@ MobileConverter for MODx - changelog.txt
 --------------------------------------------
 
 [更新履歴]
+2011/xx/xx - 2.01
+  ・&g[groupNo]_[ruleNo]_matchStrに機能追加
+     - "+"を使ったANDマッチの追加
+     - 先頭に"/"で正規表現として扱う
+  ・&g[groupNo]_useRegの廃止
+  ・同一リソースに複数の&g[groupNo]_targetDocを指定可能にした
+
 2010/02/23 - 2.00
   ・仕様変更し2.x系としてリリース
 

@@ -4,7 +4,6 @@
 //
 //  Author  : soushi
 //  Version : 2.01rc1
-//  Date    : 2011/09/18
 //
 //  License : GPL
 //
@@ -12,6 +11,7 @@
 
 //--------This plugin name
 $MyName=$modx->Event->activePlugin;
+$MC='MobileConverter';
 
 // Template
 $TemplateNotFound=<<<_TPLNOTFOUND_
@@ -32,6 +32,10 @@ _TPLNOTFOUND_;
 $imgExts=array('jpe?g','gif','png','gif');
 //image filename prefix
 $imgPrefix='.mcthumb.'; 
+
+// Debug mode
+global $MC_debug;
+$MC_debug = isset($debug) && ($debug == 1 || $debug == 'yes') ? true:false;
 
 //------------------------------------------------------ Function
 //-----------------------------------------------------
@@ -55,6 +59,28 @@ if (!function_exists('addEvent')){
       $el= &$modx->pluginEvent[$fEvent];
     }
     array_push($el, $fPlugin);
+  }
+}
+
+//-----------------------------------------------------
+//  Print Eventlog function
+//
+//  $fSubject : string : event name
+//  $fBody    : string : plugin name
+//  $fMode    : int    : 0=error,1=debug(defult=1)
+//  return    : none   :
+//
+//-----------------------------------------------------
+if (!function_exists('MC_pnt')){
+  function MC_pnt($fSubject,$fBody,$fMode=1){
+    global $modx;
+    global $MC_debug;
+
+    if( $fMode == 0 || $MC_debug == true ){
+      $prefix = '[' . (($fMode==1) ? "Debug" : "Error") . '] MobileConverter : ';
+      $type = ($fMode==1) ? 1:3;
+      $modx->logEvent(1, $type, highlight_string($fBody,true), $prefix.$fSubject);
+    }
   }
 }
 
@@ -203,72 +229,101 @@ case 'OnWebPageInit':
     $id = $parentData['id'];
     array_push($ids,$id);
   }
+  MC_pnt('Target IDs','$ids='."\n".print_r($ids,true));
 
-  //リソースがターゲットになるか判定
   $mcFlag=false;
-  $i=1;
-  while( isset(${'g'.$i.'_targetDoc'}) ){
+  for( $i=1 ; isset(${'g'.$i.'_targetDoc'});$i++ ){
+    //リソースがターゲットになるか判定
     if( ${'g'.$i.'_targetDoc'} == '' || ${'g'.$i.'_targetDoc'} == 0){
       // 0の場合はON判定
       $mcFlag= true;
-      break;
     }else{
       $targetDocs=explode(',',${'g'.$i.'_targetDoc'});
       foreach ($targetDocs as $targetDoc){
-	if(! preg_match('/^[+-]?[0-9]+[rR]?$/',$targetDoc)){
-	  $modx->logEvent(1, 1, 'Syntax error in Target IDs:'.$targetDoc, 'MobileConverter');
-	  continue;
-	}
-	$keyPos = stripos($targetDoc,'r');
-	if( $keyPos !== false){
-	  $recFlag = substr($targetDoc,-1,1); //後ろの記号を取得
-	  $targetDoc = substr($targetDoc,0,-1); //後ろのrRは削除
-	}else{
-	  //再帰不要なとき
-	  if( $targetDoc >= 0 && $ids[0] == $targetDoc){
-	    $mcFlag=true;
-	  }
-	  if( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
-	    $mcFlag=false;
-	  }	    
-	  continue;
-	}
-	//再帰が必要なとき
-	foreach( $ids as $id ){
-	  if( $recFlag == 'R' && $ids[0] == $id ){ //大文字Rの時は対象ドキュメントを含まない
-	    continue;
-	  }
-
-	  if( $targetDoc >= 0 && $id == $targetDoc ){
-	    $mcFlag=true;
-	    break;
-	  }
-	  if( $targetDoc < 0 && $id == abs($targetDoc)){
-	    $mcFlag=false;
-	    break;
-	  }    	  	  
-	}     
-      }
-      if( $mcFlag == true ){
-	break;
+        if(! preg_match('/^[+-]?[0-9]+[rR]?$/',$targetDoc)){
+          MC_pnt('Syntax error in target resouse(document) IDs','$targetDoc:'.$targetDoc,0);
+          continue;
+        }
+        $keyPos = stripos($targetDoc,'r');
+        if( $keyPos !== false){
+          $recFlag = substr($targetDoc,-1,1); //後ろの記号を取得
+          $targetDoc = substr($targetDoc,0,-1); //後ろのrRは削除
+        }else{
+          //再帰不要なとき
+          if( $targetDoc >= 0 && $ids[0] == $targetDoc){
+            $mcFlag=true;
+          }
+          if( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
+            $mcFlag=false;
+          }	    
+          continue;
+        }
+        //再帰が必要なとき
+        foreach( $ids as $id ){
+          if( $recFlag == 'R' && $ids[0] == $id ){ continue; } //大文字Rの時は対象ドキュメントを含まない
+          if( $targetDoc >= 0 && $id == $targetDoc ){
+            $mcFlag=true;
+            break;
+          }
+          if( $targetDoc < 0 && $id == abs($targetDoc)){
+            $mcFlag=false;
+            break;
+          }    	  	  
+        }
       }
     }
-    $i++;
+    if( $mcFlag == true ){
+      MC_pnt('Resouce Match!',"Group:$i\nResource:${ids[0]}\n");
+      //該当グループのルールにマッチするか判定
+      $targetVal = isset(${'g'.$i.'_targetKey'}) ? $_SERVER[${'g'.$i.'_targetKey'}] : $_SERVER['HTTP_USER_AGENT'];
+      //while( isset(${'g'.$i.'_'.$j.'_matchStr'}) ){
+      for( $j=1; isset(${'g'.$i.'_'.$j.'_matchStr'}) ;$j++){
+        $matchStrs = ${'g'.$i.'_'.$j.'_matchStr'};
+        if( $matchStrs == '' ) continue;
+        $matchStrs = str_replace('\,','\#44;',$matchStrs); // \,を置換
+        $matchStrs = explode(',',$matchStrs);
+        MC_pnt('test:matchStrs',print_r($matchStrs,true));
+        foreach ($matchStrs as $matchStr){
+          $mcFlag = true; //ここでいったんtrue
+          $matchStr = str_replace('\#44;',',',$matchStr);  // ,に戻す
+          $matchStr = str_replace('\+','\#43;',$matchStr); // \|を置換
+          $matchSubStrs = explode('+',$matchStr);
+          foreach ($matchSubStrs as $matchSubStr){
+            $matchSubStr = str_replace('\#43;','+',$matchSubStr);  // |に戻す
+            if( stripos($matchSubStr,'/') === 0 ){
+              //正規表現処理
+              if( preg_match($matchSubStr,$targetVal) != 0 ){continue;}
+            }else{
+              //普通のマッチ処理
+              if( stripos($matchSubStr,'\/') === 0 ){ // 先頭の\/の処理
+                $matchSubStr = substr($matchSubStr,1);
+              }
+              if( stristr($targetVal,$matchSubStr) !== false ){continue;}
+            }
+            $mcFlag = false;
+          }
+          if( $mcFlag == true ){
+            $groupNo = $i;
+            $ruleNo = $j;
+            MC_pnt('Group,Rule match.',"groupno=$groupNo\nrule=$ruleNo\nAgent=$targetVal");
+            break 3; //全てのループを抜ける
+          }
+        }	
+      }
+    }
   }
   
   if( $mcFlag == true){
     //次のイベントで利用する変数の決定
-    $mcConf = '';    
-    $mcConf['groupNo'] = $i; //グループNo
+    $mcConf = array();    
+    $mcConf['groupNo'] = $groupNo; //グループNo
+    $mcConf['ruleNo'] = $ruleNo;   //ルールNo
     
-    //判定用の添字決定($_SERVERの添字)
-    $mcConf['targetKey'] = isset(${'g'.$i.'_targetKey'}) ? ${'g'.$i.'_targetKey'} : 'HTTP_USER_AGENT';
-
     $modx->config['MobileConverterConf'] = $mcConf;
     addEvent('OnLoadWebDocument', $MyName);
     addEvent('OnWebPagePrerender', $MyName);
   }elseif( $enableCharConvIfnoElect == 'yes' ){ //文字コード変換だけ行う場合
-    $mcConf = '';    
+    $mcConf = array();    
     $mcConf['enableCharConv'] = true;
     $mcConf['charset'] = isset($charset) ? $charset : 'Shift_JIS';
     $modx->config['MobileConverterConf'] = $mcConf;
@@ -286,54 +341,34 @@ case 'OnLoadWebDocument':
   //前のイベントから引き継いだ変数読み出し
   $mcConf = $modx->config['MobileConverterConf'];
   $groupNo = $mcConf['groupNo'];
-  //テンプレート切り替え基準の変数決定
-  $targetKey = $mcConf['targetKey'];
-  $targetVal = $_SERVER[$targetKey];
+  $ruleNo = $mcConf['ruleNo'];
 
-  //切り替えの判定
-  $i=1;
-  while( isset(${'g'.$groupNo.'_'.$i.'_matchStr'}) ){
-
-    $matchStrs = ${'g'.$groupNo.'_'.$i.'_matchStr'};
-    if( $matchStrs == '' ) continue;
-    $matchStrs = explode(',',$matchStrs);
-    foreach ($matchStrs  as $matchStr)
-      if( (${'g'.$groupNo.'_useReg'} != 'yes' && stristr($targetVal , $matchStr) !== false)
-	  || (${'g'.$groupNo.'_useReg'} == 'yes' && preg_match($matchStr,$targetVal) != 0)){
-
-	$switchTemplate = ${'g'.$groupNo.'_'.$i.'_template'};
-	$switchImgType  = ${'g'.$groupNo.'_'.$i.'_imgType'};
-	$switchCharset  = ${'g'.$groupNo.'_'.$i.'_charset'};
-	$switchEnableCC = ${'g'.$groupNo.'_'.$i.'_enableCharConv'};
-	if( isset(${'g'.$groupNo.'_'.$i.'_imgMaxX'})){
-	  $switchImgMaxX  = ${'g'.$groupNo.'_'.$i.'_imgMaxX'};
-	  $switchImgNum = $i;
-	}
-	if( isset(${'g'.$groupNo.'_'.$i.'_imgMaxY'})){
-	  $switchImgMaxY  = ${'g'.$groupNo.'_'.$i.'_imgMaxY'};
-	  $switchImgNum = $i;
-	}
-
-	$tbl = $modx->getFullTableName("site_templates");
-	$whr = 'templatename=\''.$switchTemplate.'\'';
-	if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
-	  if( $resource = $modx->fetchRow($rs) ){
-	    $modx->documentObject['template'] = $resource['id'];
-	    $this->documentContent =  $resource['content'];
-	  }else{
-	    $modx->logEvent(1, 1, 'Template not found:'.$switchTemplate, 'MobileConverter');
-	    $bf= array('[+charset+]','[+template+]');
-	    $af= array($modx->config['modx_charset'],$switchTemplate);
-	    $TemplateNotFound = str_replace($bf,$af,$TemplateNotFound);
-	    $this->documentContent =  $TemplateNotFound;	     
-	  }
-	}
-	break 2;
-      }
-    $i++;
+  $switchTemplate = ${'g'.$groupNo.'_'.$ruleNo.'_template'};
+  $switchImgType  = ${'g'.$groupNo.'_'.$ruleNo.'_imgType'};
+  $switchCharset  = ${'g'.$groupNo.'_'.$ruleNo.'_charset'};
+  $switchEnableCC = ${'g'.$groupNo.'_'.$ruleNo.'_enableCharConv'};
+  if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'})){
+    $switchImgMaxX  = ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'};
+    $switchImgNum = $ruleNo;
   }
-  if(! isset(${'g'.$groupNo.'_'.$i.'_matchStr'}) ){ //切り替えが発生しなかったら終了
-    break;
+  if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'})){
+    $switchImgMaxY  = ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'};
+    $switchImgNum = $ruleNo;
+  }
+  
+  $tbl = $modx->getFullTableName("site_templates");
+  $whr = 'templatename=\''.$switchTemplate.'\'';
+  if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
+    if( $resource = $modx->fetchRow($rs) ){
+      $modx->documentObject['template'] = $resource['id'];
+      $this->documentContent =  $resource['content'];
+    }else{
+      $modx->logEvent(1, 1, 'Template not found:'.$switchTemplate, 'MobileConverter');
+      $bf= array('[+charset+]','[+template+]');
+      $af= array($modx->config['modx_charset'],$switchTemplate);
+      $TemplateNotFound = str_replace($bf,$af,$TemplateNotFound);
+      $this->documentContent =  $TemplateNotFound;	     
+    }
   }
 
   //文字コードの決定
