@@ -46,10 +46,10 @@ MobileConverter for MODx - readme.txt
 ・2.x系の方が設定が難しいです
 
 [3.動作確認環境]
-・MODx1.0.2J
+・MODx1.0.5J-r7
   文字コード：UTF-8
-・PHP5.2.12(PHP4では動作しません)
-・MySQL 5.0.90
+・PHP5.3.8(PHP4では動作しません)
+・MySQL 5.5.15
 ・画像を扱うためにはPHPにgbライブラリが組み込まれている必要があります。
   
 
