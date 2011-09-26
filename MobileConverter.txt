@@ -46,7 +46,8 @@ $MC_debug = isset($debug) && ($debug == 1 || $debug == 'yes') ? true:false;
 //  return   : none   :
 //
 // *** information ***
-// Not executed $modx->addEventListener for BUG(modx <=0.9.6.2 ,modx <= 1.0.0)
+// 一部バージョンの $modx->addEventListener はバグのダメ動作しない(modx <=0.9.6.2 ,modx = 1.0.0)
+// またこの独自関数ではイベントが既に登録されている場合、追記しないようにした
 //
 //-----------------------------------------------------
 if (!function_exists('addEvent')){
@@ -58,6 +59,10 @@ if (!function_exists('addEvent')){
       $modx->pluginEvent[$fEvent]= array ();
       $el= &$modx->pluginEvent[$fEvent];
     }
+    foreach( $el as $val){
+      if( $fPlugin == $val ){return;}
+    }
+    MC_pnt('Adding event',"Event:${fEvent}\nPlugin:${fPlugin}\n");
     array_push($el, $fPlugin);
   }
 }
