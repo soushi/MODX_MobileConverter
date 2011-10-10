@@ -74,6 +74,13 @@ MobileConverter for MODx - readme.txt
     次のイベントをクリックしてチェックを付けてください。
 
       ・OnWebPageInit
+      ・OnPageNotFound
+      ・(OnLoadWebDocument)
+      ・(OnLoadWebPageCache)
+      ・(OnWebPagePrerender)
+      ※()のイベントは必要に応じて自動で追加されるため、イベント順番を気にしない
+        場合は特に手動でチェックする必要はありません
+
 
 3)設定完了
 あとは実際にブラウジングして動作を確認します。
