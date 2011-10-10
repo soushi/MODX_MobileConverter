@@ -338,24 +338,17 @@ case 'OnLoadWebPageCache':
     $mcConf['groupNo'] = $groupNo; //グループNo
     $mcConf['ruleNo'] = $ruleNo;   //ルールNo
     
-    $modx->config['MobileConverterConf'] = $mcConf;
     //addEvent('OnLoadWebDocument', $MyName);
     addEvent('OnWebPagePrerender', $MyName);
   }elseif( $enableCharConvIfnoElect == 'yes' ){ //文字コード変換だけ行う場合
     $mcConf = array();    
     $mcConf['enableCharConv'] = true;
     $mcConf['charset'] = isset($charset) ? $charset : 'Shift_JIS';
-    $modx->config['MobileConverterConf'] = $mcConf;
     addEvent('OnWebPagePrerender', $MyName);
     break;
   }else{
     break;
   }
-
-  //  break;
-
-//--------------------------------------------------------------Change template and set convert event
-//case 'OnLoadWebDocument':
   
   //※ここに独自のキャッシュ機能を入れたらいいかもしれない
   //  本気でやる場合、問題点として認証チェック、公開日チェック等も独自で実装する必要がある
@@ -365,29 +358,13 @@ case 'OnLoadWebPageCache':
   //※ONの場合、最初に使われたテンプレートがキャッシュされ、パターンにマッチしない場合、そちらが利用される
   $modx->documentObject['cacheable'] = 0;
 
-  //前のイベントから引き継いだ変数読み出し
-  $mcConf = $modx->config['MobileConverterConf'];
-  $groupNo = $mcConf['groupNo'];
-  $ruleNo = $mcConf['ruleNo'];
-
-  $switchTemplate = ${'g'.$groupNo.'_'.$ruleNo.'_template'};
-  $switchImgType  = ${'g'.$groupNo.'_'.$ruleNo.'_imgType'};
-  $switchCharset  = ${'g'.$groupNo.'_'.$ruleNo.'_charset'};
-  $switchEnableCC = ${'g'.$groupNo.'_'.$ruleNo.'_enableCharConv'};
-  if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'})){
-    $switchImgMaxX  = ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'};
-    $switchImgNum = $ruleNo;
-  }
-  if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'})){
-    $switchImgMaxY  = ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'};
-    $switchImgNum = $ruleNo;
-  }
-  
+  //テンプレートの読み込み
+  $switchTemplate = ${'g'.$groupNo.'_'.$ruleNo.'_template'};  
   $tbl = $modx->getFullTableName("site_templates");
   $whr = 'templatename=\''.$switchTemplate.'\'';
   if( $rs = $modx->db->select('id,content',$tbl,$whr) ){
     if( $resource = $modx->fetchRow($rs) ){
-      $modx->documentObject['template'] = $resource['id'];
+      $this->documentObject['template'] = $resource['id'];
       $this->documentContent =  $resource['content'];
     }else{
       MC_pnt('Template error','Template not found:'.$switchTemplate,0);
@@ -399,6 +376,7 @@ case 'OnLoadWebPageCache':
   }
 
   //文字コードの決定
+  $switchCharset  = ${'g'.$groupNo.'_'.$ruleNo.'_charset'};
   if( $switchCharset != '' ){
     $mcConf['charset'] = $switchCharset;
   }else{
@@ -406,29 +384,35 @@ case 'OnLoadWebPageCache':
   }
 
   //文字コード変換の有無
-  if( $switchEnableCC == 'no' ){
+  if( ${'g'.$groupNo.'_'.$ruleNo.'_enableCharConv'} == 'no' ){
     $mcConf['enableCharConv'] = false;
   }else{
     $mcConf['enableCharConv'] = true;
   }
 
+  //画像変換の情報決定
+  $switchImgType  = ${'g'.$groupNo.'_'.$ruleNo.'_imgType'};
   if( isset($switchImgType) && $switchImgType != '' ){
     $mcConf['imgType'] = $switchImgType;
     $mcConf['imgExts'] = $imgExts;
     $mcConf['imgPrefix'] = $imgPrefix;
+
     $imgPath = isset($imgPath) && $imgPath != '' ? $imgPath : '/';
     $imgPath = isset( ${'g'.$groupNo.'_imgPath'} ) ? ${'g'.$groupNo.'_imgPath'} : $imgPath;
+
     $imgMaxX = isset($imgMaxX) && $imgMaxX != '' ? $imgMaxX : 0;
     $imgMaxX = isset( ${'g'.$groupNo.'_imgMaxX'} ) ? ${'g'.$groupNo.'_imgMaxX'} : $imgMaxX;
-    $imgMaxX = isset( $switchImgMaxX ) ? $switchImgMaxX : $imgMaxX;
+    $imgMaxX = isset( ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'} ) ? ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'} : $imgMaxX;
+
     $imgMaxY = isset($imgMaxY) && $imgMaxY != '' ? $imgMaxY : 0;
     $imgMaxY = isset( ${'g'.$groupNo.'_imgMaxY'} ) ? ${'g'.$groupNo.'_imgMaxY'} : $imgMaxY;
-    $imgMaxY = isset( $switchImgMaxY ) ? $switchImgMaxY : $imgMaxY;
+    $imgMaxY = isset( ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'} ) ? ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'} : $imgMaxY;
+
     $mcConf['imgPath'] = explode(',',$imgPath);
     $mcConf['imgMaxX'] = explode(',',$imgMaxX);
     $mcConf['imgMaxY'] = explode(',',$imgMaxY);
-    if( isset($switchImgNum)) {
-      $mcConf['imgNum'] = $switchImgNum;
+    if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'}) || isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'})){
+      $mcConf['imgNum'] = $ruleNo;;
     }
 
     $mcConf['thumbImgPath'] = isset($thumbImgPath) && $thumbImgPath != '' ? $thumbImgPath : false; //Thumbnail save path
