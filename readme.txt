@@ -325,11 +325,16 @@ MobileConverter for MODx - readme.txt
           
 
   &g[groupNo]_[ruleNo]_imgType
-    値  ：[jpg|png|gif]
+    値  ：[jpg|png|gif|inherit]
     省略：可能
     説明：ルールにマッチしたリソース内に書かれているimgタグの画像をここで指定
           した画像の種類に変換します。
-          この設定を行わない場合は変換が発生しません。
+          inheritを指定した場合は画像の種類は変更せず、サイズの変更のみが発生
+          します。
+          この設定を行わない場合は画像の変換もサイズの変更も発生しません。
+          ",(コンマ)"で複数のパスを指定できますが、必ず &imgPath,
+          &g[groupNo]_imgPath 設定の数とあわせてください。
+
           &imgPath、&g[groupNo]_imgPath 設定で更に変換対象の画像を限定すること
           ができます。
           &imgMaxX,&g[groupNo]_imgMaxX,&imgMaxY,&g[groupNo]_imgMaxY 設定で大き

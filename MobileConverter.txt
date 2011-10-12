@@ -134,6 +134,12 @@ if (!function_exists('MC_ChangeImgFilename')){
     }
     $realFileTime = filemtime($realFile); //ファイルの更新時間
 
+    //拡張子の調整
+    $tmpImgType=isset($mcConf['imgType'][$imgNo])?$mcConf['imgType'][$imgNo]:$mcConf['imgType'][0];
+    if( $tmpImgType != 'inherit' ){
+      $imgExt=$tmpImgType;
+    }
+
     //パスの計算
     if( isset($mcConf['imgNum'])){
       $addNum = $mcConf['imgNum'].'_';
@@ -141,9 +147,9 @@ if (!function_exists('MC_ChangeImgFilename')){
       $addNum = '';
     }
     if( $mcConf['thumbImgPath'] === false ){
-      $chgFile = $imgPath . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . $imgName .'.'. $mcConf['imgType'];
+      $chgFile = $imgPath . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . $imgName .'.'. $imgExt;
     }else{
-      $chgFile = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath).$imgName .'.'. $mcConf['imgType'];
+      $chgFile = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath).$imgName .'.'. $imgExt;
     }
     //$realChgFile = realpath(MODX_BASE_PATH . $chgFile); //realpathでエラーがでるため一時コメントアウト
     $realChgFile = MODX_BASE_PATH . $chgFile;
@@ -185,7 +191,7 @@ if (!function_exists('MC_ChangeImgFilename')){
 	$img = $newimg;
       }
 
-      switch($mcConf['imgType']){
+      switch($imgExt){
       case 'gif': // make gif	
 	if( function_exists('imagegif'))
 	  if( ! imagegif($img,$realChgFile))
@@ -401,7 +407,7 @@ if( isset($groupNo) &&
   //画像変換の情報決定
   $switchImgType  = ${'g'.$groupNo.'_'.$ruleNo.'_imgType'};
   if( isset($switchImgType) && $switchImgType != '' ){
-    $mcConf['imgType'] = $switchImgType;
+    $mcConf['imgType'] = explode(',',$switchImgType);
     $mcConf['imgExts'] = $imgExts;
     $mcConf['imgPrefix'] = $imgPrefix;
 

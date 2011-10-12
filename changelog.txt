@@ -11,6 +11,7 @@ MobileConverter for MODx - changelog.txt
   ・同一リソースに複数の&g[groupNo]_targetDocを指定可能にした
   ・エラーページ(404)でもMCが動作するように修正
   ・&g[groupNo]_404Resourceの追加
+  ・[#7] &g[groupNo]_[ruleNo]_imgTypeの値にinheritを追加
 
 2010/02/23 - 2.00
   ・仕様変更し2.x系としてリリース
