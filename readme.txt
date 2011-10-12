@@ -238,6 +238,15 @@ MobileConverter for MODx - readme.txt
           えると思います。
           あとQUERY_STRINGも対象にできるので何かに使えるかもしれません…。
 
+
+  &g[groupNo]_404Resource
+    値  ：[数字]
+    省略：可能
+    説明：404ページ(エラーページ)になるリソースを変更します。
+          なお、 &g[groupNo]_targetDoc にエラーページに設定しているリソースを
+          含む必要があります。
+          これでグループ毎に違う404ページを用意できます。
+
   
   [廃止]&g[groupNo]_useReg
     ※&g[groupNo]_[ruleNo]_matchStr の設定内で指定できるように変更したため廃止

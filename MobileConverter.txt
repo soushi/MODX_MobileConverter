@@ -215,28 +215,20 @@ if (!function_exists('MC_ChangeImgFilename')){
   }
 }
 
-//------------------------------------------------------ Main
-switch ($modx->Event->name){
+//---------------------------------------------------------- Main
 
-//--------------------------------------------------------------Check target
-case 'OnPageNotFound': 
-  //OnPageNotFoundを通過した場合は設定を初期化する
-  unset($modx->config['MobileConverterConf']);
-  //OnWebPageInitを通過しないパターンがあるのでここでbreakしない
-
-case 'OnWebPageInit': 
-  //以下のイベントを追加する
+//------------------------------------------------------ イベントの追加
+if( $this->Event->name == 'OnWebPageInit' || $this->Event->name == 'OnPageNotFound'){
   addEvent('OnLoadWebDocument', $MyName);
   addEvent('OnLoadWebPageCache', $MyName);
-  break;
+}
 
-case 'OnLoadWebDocument': 
-case 'OnLoadWebPageCache': 
-  MC_pnt('StartEvent','event='.$modx->Event->name);
-
-  if( isset($modx->config['MobileConverterConf'])){break;} //2回実行の禁止
-
-  $id = $modx->documentIdentifier; //Current document id
+//------------------------------------------------------ グループ、ルールのマッチ処理
+if( $this->Event->name == 'OnLoadWebDocument' ||
+    $this->Event->name == 'OnLoadWebPageCache' ||
+    $this->Event->name == 'OnPageNotFound'){
+  
+  $id = $this->documentIdentifier; //Current document id
 
   // トップ階層までリソースIDを求める
   $ids = array();
@@ -331,24 +323,40 @@ case 'OnLoadWebPageCache':
       }
     }
   }
-  
-  if( $mcFlag == true){
+}
+
+//------------------------------------------------------ 専用404ページの用意
+if( $this->Event->name == 'OnPageNotFound' ){
+  if( isset(${'g'.$groupNo.'_404Resource'}) && preg_match('/^[0-9]+$/',${'g'.$groupNo.'_404Resource'}) ){
+    $this->config['error_page'] = ${'g'.$groupNo.'_404Resource'};
+  }
+}
+
+//------------------------------------------------------ OnWebPagePrerenderイベント準備
+if( $this->Event->name == 'OnLoadWebDocument' ||
+    $this->Event->name == 'OnLoadWebPageCache'){
+
+  unset($modx->config['MobileConverterConf']); ///2回実行対策(いらないかも)
+
+  if( isset($groupNo) ){
     //次のイベントで利用する変数の決定
     $mcConf = array();    
     $mcConf['groupNo'] = $groupNo; //グループNo
     $mcConf['ruleNo'] = $ruleNo;   //ルールNo
     
-    //addEvent('OnLoadWebDocument', $MyName);
     addEvent('OnWebPagePrerender', $MyName);
   }elseif( $enableCharConvIfnoElect == 'yes' ){ //文字コード変換だけ行う場合
     $mcConf = array();    
     $mcConf['enableCharConv'] = true;
     $mcConf['charset'] = isset($charset) ? $charset : 'Shift_JIS';
     addEvent('OnWebPagePrerender', $MyName);
-    break;
-  }else{
-    break;
   }
+}
+
+//------------------------------------------------------ テンプレート変換
+if( isset($groupNo) && 
+    ($this->Event->name == 'OnLoadWebDocument' ||
+     $this->Event->name == 'OnLoadWebPageCache')){
   
   //※ここに独自のキャッシュ機能を入れたらいいかもしれない
   //  本気でやる場合、問題点として認証チェック、公開日チェック等も独自で実装する必要がある
@@ -425,10 +433,11 @@ case 'OnLoadWebPageCache':
     $this->documentContent= $this->parseDocumentSource($this->documentContent);
   }
 
-   break;
+}
 
-   //--------------------------------------------------------------Convert charset and change image
- case 'OnWebPagePrerender':
+//------------------------------------------------------ 画像変換、文字コード変換
+if( $this->Event->name == 'OnWebPagePrerender' ){
+
    //Set value prev event
    $mcConf = $modx->config['MobileConverterConf'];
 
@@ -457,8 +466,5 @@ case 'OnLoadWebPageCache':
      if( stripos($mcConf['charset'] , 'Shift_JIS') !== false) $mcConf['charset'] = 'SJIS';
      
      $modx->documentOutput = mb_convert_encoding($modx->documentOutput,$mcConf['charset'],$modx->config['modx_charset']);
-   }
-
-   break;
-   
+   }   
 }
