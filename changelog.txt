@@ -9,6 +9,7 @@ MobileConverter for MODx - changelog.txt
      - 先頭に"/"で正規表現として扱う
   ・&g[groupNo]_useRegの廃止
   ・同一リソースに複数の&g[groupNo]_targetDocを指定可能にした
+  ・エラーページ(404)でもMCが動作するように修正
   ・&g[groupNo]_404Resourceの追加
 
 2010/02/23 - 2.00
