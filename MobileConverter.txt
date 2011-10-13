@@ -250,43 +250,60 @@ if( $this->Event->name == 'OnLoadWebDocument' ||
   MC_pnt('Target IDs','$ids='."\n".print_r($ids,true));
 
   $mcFlag=false;
-  for( $i=1 ; isset(${'g'.$i.'_targetDoc'});$i++ ){
-    //リソースがターゲットになるか判定
-    if( ${'g'.$i.'_targetDoc'} == '' || (string)${'g'.$i.'_targetDoc'} == '0'){
-      MC_pnt('Zero checkt','Group:'.$i."\nNum:".$targetDoc);
-      // 0の場合はON判定
-      $mcFlag= true;
+  for( $i=1 ; isset(${'g'.$i.'_targetDoc'}) || isset(${'g'.$i.'_targetTemplate'});$i++ ){
+    //リソースIDかテンプレートのターゲット判定(テンプレート優先で排他制御)
+    if( isset(${'g'.$i.'_targetTemplate'}) ){
+      //テンプレートがターゲットになるか判定
+      $sql = 'SELECT c.id, t.templatename 
+              FROM  '.$modx->getFullTableName("site_content")  .' as c,
+                    '.$modx->getFullTableName("site_templates").' as t
+              WHERE c.template = t.id
+                AND c.id = '.(int)$ids[0];
+      MC_pnt('Template check SQL','SQL:'.$sql);
+      $rs = $this->db->query($sql);
+      if( $row = $this->db->getRow($rs) ){
+        if( $row['templatename'] == ${'g'.$i.'_targetTemplate'}){
+          MC_pnt('Template match!','$temp1:'.${'g'.$i.'_targetTemplate'}."\n".'$temp2:'.$row['templatename']);
+          $mcFlag= true;
+        }
+      }
     }else{
-      $targetDocs=explode(',',${'g'.$i.'_targetDoc'});
-      foreach ($targetDocs as $targetDoc){
-        if(! preg_match('/^[+-]?[0-9]+[rR]?$/',$targetDoc)){
-          MC_pnt('Syntax error in target resouse(document) IDs','$targetDoc:'.$targetDoc,0);
-          continue;
-        }
-        $keyPos = stripos($targetDoc,'r');
-        if( $keyPos !== false){
-          $recFlag = substr($targetDoc,-1,1); //後ろの記号を取得
-          $targetDoc = substr($targetDoc,0,-1); //後ろのrRは削除
-        }else{
-          //再帰不要なとき
-          if( $targetDoc == 0 || $ids[0] == $targetDoc){
-            $mcFlag=true;
-          }elseif( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
-            $mcFlag=false;
-          }	    
-          continue;
-        }
-        //再帰が必要なとき
-        foreach( $ids as $id ){
-          if( $recFlag == 'R' && $ids[0] == $id ){ continue; } //大文字Rの時は対象ドキュメントを含まない
-          if( $targetDoc >= 0 && $id == $targetDoc ){
-            $mcFlag=true;
-            break;
+      //リソースがターゲットになるか判定
+      if( ${'g'.$i.'_targetDoc'} == '' || (string)${'g'.$i.'_targetDoc'} == '0'){
+        // 0の場合はON判定
+        $mcFlag= true;
+      }else{
+        $targetDocs=explode(',',${'g'.$i.'_targetDoc'});
+        foreach ($targetDocs as $targetDoc){
+          if(! preg_match('/^[+-]?[0-9]+[rR]?$/',$targetDoc)){
+            MC_pnt('Syntax error in target resouse(document) IDs','$targetDoc:'.$targetDoc,0);
+            continue;
           }
-          if( $targetDoc < 0 && $id == abs($targetDoc)){
-            $mcFlag=false;
-            break;
-          }    	  	  
+          $keyPos = stripos($targetDoc,'r');
+          if( $keyPos !== false){
+            $recFlag = substr($targetDoc,-1,1); //後ろの記号を取得
+            $targetDoc = substr($targetDoc,0,-1); //後ろのrRは削除
+          }else{
+            //再帰不要なとき
+            if( $targetDoc == 0 || $ids[0] == $targetDoc){
+              $mcFlag=true;
+            }elseif( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
+              $mcFlag=false;
+            }	    
+            continue;
+          }
+          //再帰が必要なとき
+          foreach( $ids as $id ){
+            if( $recFlag == 'R' && $ids[0] == $id ){ continue; } //大文字Rの時は対象ドキュメントを含まない
+            if( $targetDoc >= 0 && $id == $targetDoc ){
+              $mcFlag=true;
+              break;
+            }
+            if( $targetDoc < 0 && $id == abs($targetDoc)){
+              $mcFlag=false;
+              break;
+            }    	  	  
+          }
         }
       }
     }

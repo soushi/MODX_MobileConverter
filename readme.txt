@@ -111,7 +111,7 @@ MobileConverter for MODx - readme.txt
 
   &g[groupNo]_targetDoc
     値  ：[+-][数字][オプション][,…]
-    省略：不可
+    省略：&g[groupNo]_targetDoc か &g[groupNo]_targetTemplate のどちらかは必須
     説明：MobileConverterが有効になるリソースIDを指定します。
           ",(コンマ)"で複数のリソースを指定できます。
           オプション等の意味は次のとおりです。
@@ -159,6 +159,12 @@ MobileConverter for MODx - readme.txt
           す。
           またgroupNoは1から設定する必要があり、必ず連番にする必要があります。
 
+
+  &g[groupNo]_targetTemplate
+    値  ：[テンプレート名]
+    省略：&g[groupNo]_targetDoc か &g[groupNo]_targetTemplate のどちらかは必須
+    説明：MobileConverterが有効になるテンプレート名を指定します。
+          ※細かい説明は後日追記
 
   &imgPath
   &g[groupNo]_imgPath
