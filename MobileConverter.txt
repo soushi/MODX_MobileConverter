@@ -252,7 +252,8 @@ if( $this->Event->name == 'OnLoadWebDocument' ||
   $mcFlag=false;
   for( $i=1 ; isset(${'g'.$i.'_targetDoc'});$i++ ){
     //リソースがターゲットになるか判定
-    if( ${'g'.$i.'_targetDoc'} == '' || ${'g'.$i.'_targetDoc'} == 0){
+    if( ${'g'.$i.'_targetDoc'} == '' || (string)${'g'.$i.'_targetDoc'} == '0'){
+      MC_pnt('Zero checkt','Group:'.$i."\nNum:".$targetDoc);
       // 0の場合はON判定
       $mcFlag= true;
     }else{
@@ -268,10 +269,9 @@ if( $this->Event->name == 'OnLoadWebDocument' ||
           $targetDoc = substr($targetDoc,0,-1); //後ろのrRは削除
         }else{
           //再帰不要なとき
-          if( $targetDoc >= 0 && $ids[0] == $targetDoc){
+          if( $targetDoc == 0 || $ids[0] == $targetDoc){
             $mcFlag=true;
-          }
-          if( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
+          }elseif( $targetDoc < 0 && $ids[0] == abs($targetDoc)){
             $mcFlag=false;
           }	    
           continue;
