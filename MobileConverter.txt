@@ -171,17 +171,30 @@ if (!function_exists('MC_ChangeImgFilename')){
       }
       $imgX = imagesx($img);
       $imgY = imagesy($img);
-      $toX=0;
-      $toY=0;
-      if( $maxX != 0 && $maxX < $imgX ){
-	$toX = $maxX;
-	$toY = (int)($imgY * ($maxX / $imgX));
+      $toX=$imgX;
+      $toY=$imgY;
+      $percentFlag=false;
+      //パーセントで拡大縮小
+      if( substr($maxX,-1) == '%' ){
+	$toX = (int)($imgX * ( (int)substr($maxX,0,-1) / 100 ));
+	$percentFlag=true;
       }
-      if( $maxY != 0 && $maxY < $imgY ){
-	$tmpX = (int)($imgX * ($maxY / $imgY));
-	if( $maxX > $tmpX ){
-	  $toX = $tmpX;
-	  $toY = $maxY;
+      if( substr($maxY,-1) == '%' ){
+	$toY = (int)($imgY * ( (int)substr($maxY,0,-1) / 100 ));
+	$percentFlag=true;
+      }
+      //ピクセルで縮小	
+      if( ! $percentFlag ){
+	if( $maxX != 0 && $maxX < $imgX ){
+	  $toX = $maxX;
+	  $toY = (int)($imgY * ($maxX / $imgX));
+	}
+	if( $maxY != 0 && $maxY < $imgY ){
+	  $tmpX = (int)($imgX * ($maxY / $imgY));
+	  if( $maxX > $tmpX ){
+	    $toX = $tmpX;
+	    $toY = $maxY;
+	  }
 	}
       }
       if( $toX != 0 && $toY != 0){ //リサイズ実行
