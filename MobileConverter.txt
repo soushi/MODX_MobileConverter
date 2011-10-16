@@ -157,7 +157,7 @@ if (!function_exists('MC_ChangeImgFilename')){
       $chgPath = $mcConf['thumbImgPath'];
       $chgFile = $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath) . $imgName .'.'. $imgExt;
     }
-    $realChgFile = realpath(MODX_BASE_PATH . $chgPath) . $chgFile;
+    $realChgFile = realpath(MODX_BASE_PATH . $chgPath) . '/' . $chgFile;
     if( $realChgFile == $chgFile ){
       MC_pnt('Cache path not found','PATH:'.MODX_BASE_PATH . $chgPath,0);
       return $fMt[0];
