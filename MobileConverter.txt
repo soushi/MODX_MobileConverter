@@ -124,9 +124,9 @@ if (!function_exists('MC_ChangeImgFilename')){
     $flag=false;
     foreach( $mcConf['imgPath'] as $key => $val ){
       if( $val == '/' || strstr($imgPath,$val) !== false){
-	$imgNo = $key;
-	$flag = true;
-	break;
+        $imgNo = $key;
+        $flag = true;
+        break;
       }
     }
     if(! $flag ) return $fMt[0];
@@ -151,12 +151,19 @@ if (!function_exists('MC_ChangeImgFilename')){
       $addNum = '';
     }
     if( $mcConf['thumbImgPath'] === false ){
-      $chgFile = $imgPath . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . $imgName .'.'. $imgExt;
+      $chgPath = $imgPath;
+      $chgFile = $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . $imgName .'.'. $imgExt;
     }else{
-      $chgFile = $mcConf['thumbImgPath'] . $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath).$imgName .'.'. $imgExt;
+      $chgPath = $mcConf['thumbImgPath'];
+      $chgFile = $mcConf['imgPrefix'] . $mcConf['groupNo'] . '_' . $addNum . str_replace('/','_',$imgPath) . $imgName .'.'. $imgExt;
     }
-    //$realChgFile = realpath(MODX_BASE_PATH . $chgFile); //realpathでエラーがでるため一時コメントアウト
-    $realChgFile = MODX_BASE_PATH . $chgFile;
+    $realChgFile = realpath(MODX_BASE_PATH . $chgPath) . $chgFile;
+    if( $realChgFile == $chgFile ){
+      MC_pnt('Cache path not found','PATH:'.MODX_BASE_PATH . $chgPath,0);
+      return $fMt[0];
+    }
+    $chgFile= $chgPath . $chgFile;
+    MC_pnt('Cahe image path','PATH:'.$realChgFile);
 
     //変換画像作成
     if(! is_file($realChgFile)  || is_file($realChgFile) && filemtime($realChgFile) < $realFileTime ){      
