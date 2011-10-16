@@ -26,9 +26,9 @@ MobileConverter for MODx - changelog.txt
   ・realpath()処理でエラーになる問題を修正
 
   [Special thanks]
-    黒木さん
     MEGUさん
     thrさん
+    KUROさん
 
 2010/02/23 - 2.00
   ・仕様変更し2.x系としてリリース
