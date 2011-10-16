@@ -15,6 +15,7 @@ MobileConverter for MODx - changelog.txt
   ・[#4] &g[groupNo]_targetTemplateを追加
     リソースIDではなくテンプレート指定の変換が可能になった
   ・&imgMaxX/Y、&g[groupNo]_imgMaxX/Yに%(割合)指定が可能になった
+  ・[#6] &imgPathの例外設定&imgPathExceptを追加
 
   [廃止]
   ・&g[groupNo]_useRegの廃止

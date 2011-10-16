@@ -129,6 +129,15 @@ if (!function_exists('MC_ChangeImgFilename')){
         break;
       }
     }
+    MC_pnt('Imaga path except list',"Except list:".print_r($mcConf['imgPathExcept'],true));
+    foreach( $mcConf['imgPathExcept'] as $key => $val ){
+      //例外処理
+      MC_pnt('Imaga path except',"Path:$imgPath\nExcept:$val\n");
+      if( $val != '' && strstr($imgPath,$val) !== false){
+        $flag = false;
+        break;
+      }
+    }
     if(! $flag ) return $fMt[0];
 
     //本体画像の存在確認
@@ -455,6 +464,9 @@ if( isset($groupNo) &&
     $imgPath = isset($imgPath) && $imgPath != '' ? $imgPath : '/';
     $imgPath = isset( ${'g'.$groupNo.'_imgPath'} ) ? ${'g'.$groupNo.'_imgPath'} : $imgPath;
 
+    $imgPathExcept = isset($imgPathExcept) && $imgPathExcept != '' ? $imgPathExcept : '';
+    $imgPathExcept = isset( ${'g'.$groupNo.'_imgPathExcept'} ) ? ${'g'.$groupNo.'_imgPathExcept'} : $imgPathExcept;
+
     $imgMaxX = isset($imgMaxX) && $imgMaxX != '' ? $imgMaxX : 0;
     $imgMaxX = isset( ${'g'.$groupNo.'_imgMaxX'} ) ? ${'g'.$groupNo.'_imgMaxX'} : $imgMaxX;
     $imgMaxX = isset( ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'} ) ? ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'} : $imgMaxX;
@@ -464,6 +476,7 @@ if( isset($groupNo) &&
     $imgMaxY = isset( ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'} ) ? ${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'} : $imgMaxY;
 
     $mcConf['imgPath'] = explode(',',$imgPath);
+    $mcConf['imgPathExcept'] = explode(',',$imgPathExcept);
     $mcConf['imgMaxX'] = explode(',',$imgMaxX);
     $mcConf['imgMaxY'] = explode(',',$imgMaxY);
     if( isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxX'}) || isset(${'g'.$groupNo.'_'.$ruleNo.'_imgMaxY'})){

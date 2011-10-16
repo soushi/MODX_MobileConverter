@@ -183,6 +183,13 @@ MobileConverter for MODx - readme.txt
           が有効になります。
           なお、設定は &g[groupNo]_imgPath の方が優先されます。
 
+  &imgPathExcept
+  &g[groupNo]_imgPathExcept
+    値  ：[Dir]
+    省略：可能
+    説明：imgPathの対象になったディレクトリのうち画像変換の対象外になるパス(ディレ
+          クトリ)を指定します。
+          ※細かい説明は後日追記
 
   &imgMaxX
   &g[groupNo]_imgMaxX
