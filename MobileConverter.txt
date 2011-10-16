@@ -101,8 +101,12 @@ if (!function_exists('MC_ChangeImgFilename')){
     global $modx;
 
     $mcConf = $modx->config['MobileConverterConf'];
-    if(! preg_match('/src=["\']?([^"\' ]*?)?([^\/"\' ]+)\.([^\.\/"\' >]+)/i',$fMt[0],$mt) )
-          return $fMt[0];
+    
+    if(! preg_match('/src=["\']([^"\']*?)?([^\/"\']+)\.([^\.\/"\'>]+)["\']/i',$fMt[0],$mt) ){
+      if(! preg_match('/src=([^ \>]*\/)?([^ \/\>]+)\.([^\. \>]+)/i',$fMt[0],$mt) ){ // 「'"」で囲ってない場合
+        return $fMt[0];
+      }
+    }
     $imgPath=$mt[1];
     $imgName=$mt[2];
     $imgExt=$mt[3];

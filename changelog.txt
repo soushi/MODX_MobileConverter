@@ -17,7 +17,9 @@ MobileConverter for MODx - changelog.txt
   ・[#4]&g[groupNo]_targetTemplateを追加
     リソースIDではなくテンプレート指定の変換が可能になった
   ・&imgMaxX/Y、&g[groupNo]_imgMaxX/Yに%(割合)指定が可能になった
-  
+  ・画像パスに"."が含まれている場合に正常に動作しない問題を修正
+       - Special thanks to thrさん
+
 2010/02/23 - 2.00
   ・仕様変更し2.x系としてリリース
 
