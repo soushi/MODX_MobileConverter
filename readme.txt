@@ -43,7 +43,7 @@ MobileConverter(以下、MC)はブラウザから送られてくる情報(User A
   (PHPの$_SERVER内の変数なら何でも判定に利用できます)
 ・ルールをマッチさせる際に正規表現が利用できるようになった
 ・画像は必要に応じて種類の変更、サイズの縮小を実行
-  (1.x系では必ずmodx管理画面のファイル管理で画像をアップする必要があった)
+  (1.x系では必ずMODX管理画面のファイル管理で画像をアップする必要があった)
 ・プラグインの名前の制約がなくなった
   (1.x系では必ず MobileConverter という名称にする必要があった)
 ・2.x系の方が設定が難しいです
@@ -59,8 +59,19 @@ MobileConverter(以下、MC)はブラウザから送られてくる情報(User A
 
 [4.インストール・設定方法]
   1)事前確認
-    ※TinyMCEとMODXの画像パス設定を確認
-    ※ここは記述中
+    MCの設定を開始する前にMODXの設定を確認します。
+
+    a.「ツール」→「グローバル設定」→「インターフェースとその他の機能」にある
+      「相対パスを渡す」設定が「はい」になっている事
+
+    b.「エレメント」→「グローバル管理」→「プラグイン」の「TinyMCE Rich Text 
+       Editor」をクリック
+       「設定」にある「Path Options」が「siteconfig」もしくは「rootrelative」
+       になっている事
+
+    この設定が違う場合、HTMLから画像パスの抽出ができず画像の変換が行われなくな
+    ります。
+    (フルパス表記等の対応は検討中です)
 
   2)アーカイブファイルを解答します。
 
@@ -119,6 +130,13 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
     説明：ルールにマッチしたリソースに対してMODXの既定の文字コードから変換したい
           文字コードを指定します。
 
+  &enableCharConv
+    値  ：[yes|no]
+    既定：no
+    省略：可能
+    説明：ルールにマッチしたリソースに対して文字コードの変換の有無を設定します。
+          yesを設定すると文字コードの変換が行われます。
+          デフォルトは no です。
 
   &enableCharConvIfnoElect
     値  ：[yes|no]
@@ -217,6 +235,26 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
               ※[groupNo]はグループナンバーとなり、グループについては後述します。
 
 
+  &enableOutEffect
+    値  ：[yes|no]
+    既定：no
+    省略：可能
+    説明：アクセス毎に一時的にMCを無効にすることができます。
+          有効/無効の制御は以下の変数をQUERY_STRINGかPOSTに含めてリクエストさ
+          せます。
+
+            キー：MC_Eneble
+            値  ：on もしくは off
+
+          MC_Eneble=offを含めてリクエストすることで、そのブラウザ(端末)からの
+          アクセスはMCが無効になり、テンプレート/画像の変換が発生しなくなりま
+          す。          
+          一旦、無効になるとcookieに情報が保存され、MC_Eneble=onの変数を含めて
+          リクエストが行われるまでMCは機能しません。
+          (もしくはブラウザを一旦落とすとcookieが消えます)
+
+ 
+
   &g[groupNo]_targetDoc
     値  ：[+-][リソースID][オプション](,..)
     既定：(未設定)
@@ -307,15 +345,6 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
           省略した場合は &imgPathExcept 設定に従います。
 
 
-  &g[groupNo]_imgMaxX
-  &g[groupNo]_imgMaxY
-    値  ：[整数(0以上) or 整数(0以上)%](,..)
-    既定：(未設定)
-    省略：&imgMaxX / &imgMaxY 設定に従う
-    説明：指定した[groupNo]専用の  &imgMaxX / &imgMaxY を設定します。
-          省略した場合は &imgMaxX / &imgMaxY 設定に従います。
-
-          
   &g[groupNo]_thumbImgPath
     値  ：[Dir]
     既定：(未設定)
@@ -367,6 +396,18 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
           また"/"だけは先頭になければ普通の"/"として扱います。
 
 
+  &g[groupNo]_imgMaxX
+  &g[groupNo]_imgMaxY
+  &g[groupNo]_[ruleNo]_imgMaxX
+  &g[groupNo]_[ruleNo]_imgMaxY
+    値  ：[整数(0以上) or 整数(0以上)%](,..)
+    既定：(未設定)
+    省略：&imgMaxX / &imgMaxY 設定に従う
+    説明：指定した[groupNo]もしくは[groupNo]と[ruleNo]専用の  &imgMaxX / 
+          &imgMaxY を設定します。
+          省略した場合は &imgMaxX / &imgMaxY 設定に従います。
+
+          
   &g[groupNo]_[ruleNo]_charset
     値  ：[UTF-8|Shift_JIS|EUC-JP|等]
     既定：&charset 設定に従う
@@ -432,6 +473,14 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
           画像のパス等は &thumbImgPath 設定を見てください。
 
 
+  &g[groupNo]_enableOutEffect
+    値  ：[yes|no]
+    既定：&enableOutEffect 設定に従う
+    省略：可能
+    説明：指定した[groupNo]と[ruleNo]専用の &enableOutEffect を設定します。
+          省略した場合は &enableOutEffect 設定に従います。
+
+
   &g[groupNo]_404Resource
     値  ：[数字]
     既定：HTTP_USER_AGENT
@@ -465,13 +514,14 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
   PC&携帯サイト対応(画像変換なし)
   以下の設定をプラグインの「プラグイン設定」に貼り付ける。
 
-&g1_targetDoc=Grp1:Target IDs;string;0
-&g1_1_matchStr=Grp1:UserAgent for Docomo;string;Docomo
-&g1_1_template=Grp1:Template for Docomo;string;T_Docomo
-&g1_2_matchStr=Grp1:UserAgent for Softbank;string;Vodafone,J-PHONE,SoftBank
-&g1_2_template=Grp1:Template for Softbank;string;T_Softbank
-&g1_3_matchStr=Grp1:UserAgent for au;string;KDDI
-&g1_3_template=Grp1:Template for au;string;T_au
+&enableCharConv=文字コード変換;string;yes
+&g1_targetDoc=Grp1:リソースID;string;0
+&g1_1_matchStr=Grp1:ドコモ用Agent;string;Docomo
+&g1_1_template=Grp1:Docomo用テンプレート;string;T_Docomo
+&g1_2_matchStr=Grp1:Softbank用Agent;string;Vodafone,J-PHONE,SoftBank
+&g1_2_template=Grp1:Softbank用テンプレート;string;T_Softbank
+&g1_3_matchStr=Grp1:AU用Agent;string;KDDI
+&g1_3_template=Grp1:AU用テンプレート;string;T_au
 
   動作は以下のとおりです。
 
@@ -488,20 +538,21 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
   PC&携帯サイト対応(画像変換あり)
   以下の設定をプラグインの「プラグイン設定」に貼り付ける。
 
-&g1_targetDoc=Grp1:Target IDs;string;0
-&g1_imgPath=Grp1:Target img path;string;assets/images/
-&g1_imgMaxX=Grp1:Target img max X;string;200
-&g1_imgMaxY=Grp1:Target img max Y;string;180
-&g1_thumbImgPath=Grp1:Thumbnail path;string;assets/images/tmp/
-&g1_1_matchStr=Grp1:UserAgent for Docomo;string;Docomo
-&g1_1_template=Grp1:Template for Docomo;string;T_Docomo
-&g1_1_imgType=Grp1:ImageType for Docomo;string;gif
-&g1_2_matchStr=Grp1:UserAgent for Softbank;string;Vodafone,J-PHONE,SoftBank
-&g1_2_template=Grp1:Template for Softbank;string;T_Softbank
-&g1_2_imgType=Grp1:ImageType for Softbank;string;jpg
-&g1_3_matchStr=Grp1:UserAgent for au;string;KDDI
-&g1_3_template=Grp1:Template for au;string;T_au
-&g1_3_imgType=Grp1:ImageType for au;string;png
+&enableCharConv=文字コード変換;string;yes
+&g1_targetDoc=Grp1:リソースID;string;0
+&g1_imgPath=Grp1:対象画像パス;string;assets/images/
+&g1_imgMaxX=Grp1:最大Xサイズ;string;200
+&g1_imgMaxY=Grp1:最大Yサイズ;string;180
+&g1_thumbImgPath=Grp1:サムネイル保存パス;string;assets/images/tmp/
+&g1_1_matchStr=Grp1:ドコモ用Agent;string;Docomo
+&g1_1_template=Grp1:ドコモ用テンプレート;string;T_Docomo
+&g1_1_imgType=Grp1:ドコモ用画像タイプ;string;gif
+&g1_2_matchStr=Grp1:Softbank用Agent;string;Vodafone,J-PHONE,SoftBank
+&g1_2_template=Grp1:Softbank用テンプレート;string;T_Softbank
+&g1_2_imgType=Grp1:Softbank用画像タイプ;string;jpg
+&g1_3_matchStr=Grp1:AU用Agent;string;KDDI
+&g1_3_template=Grp1:AU用テンプレート;string;T_au
+&g1_3_imgType=Grp1:AU用画像タイプ;string;png
 
   動作は以下のとおりです。
 
@@ -523,17 +574,18 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
   Docomoをメインページとし、3キャリア携帯振り分け(画像変換あり)
   以下の設定をプラグインの「プラグイン設定」に貼り付ける。
 
-&enableCharConvIfnoElect=Char Conv If no Elect;list;yes,no;yes &g1_targetDoc=Grp1:Target IDs;string;7r,18R
-&g1_imgPath=Grp1:Target img path;string;assets/images/
-&g1_imgMaxX=Grp1:Target img max X;string;200
-&g1_imgMaxY=Grp1:Target img max Y;string;180
-&g1_thumbImgPath=Grp1:Thumbnail path;string;assets/images/tmp/
-&g1_1_matchStr=Grp1:UserAgent for Softbank;string;Vodafone,J-PHONE,SoftBank
-&g1_1_template=Grp1:Template for Softbank;string;T_Softbank
-&g1_1_imgType=Grp1:ImageType for Softbank;string;jpg
-&g1_2_matchStr=Grp1:UserAgent for au;string;KDDI
-&g1_2_template=Grp1:Template for au;string;T_au
-&g1_2_imgType=Grp1:ImageType for au;string;png
+&enableCharConv=文字コード変換;string;yes
+&enableCharConvIfnoElect=MC対象外も文字コード変換;list;yes,no;yes &g1_targetDoc=Grp1:リソースID;string;7r,18R
+&g1_imgPath=Grp1:対象画像パス;string;assets/images/
+&g1_imgMaxX=Grp1:最大Xサイズ;string;200
+&g1_imgMaxY=Grp1:最大Yサイズ;string;180
+&g1_thumbImgPath=Grp1:サムネイル保存パス;string;assets/images/tmp/
+&g1_1_matchStr=Grp1:Softbank用Agent;string;Vodafone,J-PHONE,SoftBank
+&g1_1_template=Grp1:Softbank用テンプレート;string;T_Softbank
+&g1_1_imgType=Grp1:Softbank用画像タイプ;string;jpg
+&g1_2_matchStr=Grp1:AU用Agent;string;KDDI
+&g1_2_template=Grp1:AU用テンプレート;string;T_au
+&g1_2_imgType=Grp1:AU用画像タイプ;string;png
 
   動作は以下のとおりです。
 
@@ -555,20 +607,21 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
   携帯用にテンプレートを切り替えるのですが、リソースに応じて切り替えるテンプ
   レートを変更します(画像変換なし)。
 
-&g1_targetDoc=Grp1:Target IDs;string;10r
-&g1_1_matchStr=Grp1:UserAgent for Docomo;string;Docomo
-&g1_1_template=Grp1:Template for Docomo;string;T_Docomo1
-&g1_2_matchStr=Grp1:UserAgent for Softbank;string;Vodafone,J-PHONE,SoftBank
-&g1_2_template=Grp1:Template for Softbank;string;T_Softbank1
-&g1_3_matchStr=Grp1:UserAgent for au;string;KDDI
-&g1_3_template=Grp1:Template for au;string;T_au1
-&g2_targetDoc=Grp2:Target IDs;string;20R
-&g2_1_matchStr=Grp2:UserAgent for Docomo;string;Docomo
-&g2_1_template=Grp2:Template for Docomo;string;T_Docomo2
-&g2_2_matchStr=Grp2:UserAgent for Softbank;string;Vodafone,J-PHONE,SoftBank
-&g2_2_template=Grp2Template for Softbank;string;T_Softbank2
-&g2_3_matchStr=Grp2:UserAgent for au;string;KDDI
-&g2_3_template=Grp2:Template for au;string;T_au2
+&enableCharConv=文字コード変換;string;yes
+&g1_targetDoc=Grp1:リソースID;string;10r
+&g1_1_matchStr=Grp1:ドコモ用Agent;string;Docomo
+&g1_1_template=Grp1:ドコモ用テンプレート;string;T_Docomo1
+&g1_2_matchStr=Grp1:Softbank用Agent;string;Vodafone,J-PHONE,SoftBank
+&g1_2_template=Grp1:Softbank用テンプレート;string;T_Softbank1
+&g1_3_matchStr=Grp1:AU用Agent;string;KDDI
+&g1_3_template=Grp1:AU用テンプレート;string;T_au1
+&g2_targetDoc=Grp2:リソースID;string;20R
+&g2_1_matchStr=Grp2:ドコモ用Agent;string;Docomo
+&g2_1_template=Grp2:ドコモ用テンプレート;string;T_Docomo2
+&g2_2_matchStr=Grp2:Softbank用Agent;string;Vodafone,J-PHONE,SoftBank
+&g2_2_template=Grp2Softbank用テンプレート;string;T_Softbank2
+&g2_3_matchStr=Grp2:AU用Agent;string;KDDI
+&g2_3_template=Grp2:AU用テンプレート;string;T_au2
 
   動作は以下のとおりです。
 
@@ -590,6 +643,41 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
 
 
 設定例-5)
+  Android、iphone用のテンプレートを変換する例です。
+
+&enableOutEffect=外部MC制御;string;yes
+&g1_targetTemplate=Grp1:テンプレート名;string;PC用テンプレ
+&g1_imgPath=Grp1:対象画像パス;string;assets/images/sp01/,assets/images/sp02/
+&g1_imgMaxX=Grp1:最大Xサイズ;string;150,40%
+&g1_imgMaxY=Grp1:最大Yサイズ;string;180,40%
+&g1_thumbImgPath=Grp1:サムネイル保存パス;string;assets/images/tmp/sp01/,assets/images/tmp/sp02/
+&g1_1_matchStr=Grp1:スマフォ用Agent;string;iphone,android
+&g1_1_template=Grp1:スマフォ用テンプレート;string;T_SP
+&g1_1_imgType=Grp1:スマフォ用画像タイプ;string;png,inherit
+
+  動作は以下のとおりです。
+
+  ・「PC用テンプレ」をテンプレートにしているリソースが対象
+  ・Android,iphone(スマフォ)端末からのアクセスは以下の処理を行う
+      - テンプレートをT_SPに切替
+      - assets/images/sp01/ 以下の画像はX=150,Y=180以下に縮小
+        ※画像をpngに変換
+        ※変換した画像は assets/images/tmp/sp01/ に保存される
+      - assets/images/sp02/ 以下の画像はX,Y共に40%に縮小
+        ※画像タイプはそのまま
+        ※変換した画像は assets/images/tmp/sp02/ に保存される
+
+  &enableOutEffectが有効になっているので、以下のようにQUERY_STRINGをつけたリンクを用意すると、その
+  ブラウザは一時的にMCの変換が無効になります。
+
+    http://example.jp/hoge.html?MC_Eneble=off
+    ※POSTで渡しても可
+
+  逆に有効にするにはMC_Eneble=onをつけてリクエストさせてください。
+  スマフォでもPC版ページを見せたいときに利用できます。
+
+
+設定例-6)
   複雑な設定例です。
   こんな設定もできます(が、動作説明は省略します)。
   ちなみにグループ3は日本語設定のブラウザ(もしくは判断できない)のときだけテン
@@ -634,8 +722,6 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
 &g3_1_charset=Grp3:Charset;string;EUC-JP
 
 
-
-
 [7.アンインストール]
 1.MCプラグインを削除します。
  「リソース」→「リソース管理」→「プラグイン」→「MobileConverter」→「削除」
@@ -678,9 +764,12 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
       </html>
      -------------------------------------------------------------
 
+  MODXのどこかのバージョンからURL付のフルパス表記に対応しており、場合によって
+  は設定を見直す必要があります。
+  (詳しくは 4.インストール・設定方法の1を参照してください)
+
   また画像変換した後のimgタグではwidthとheight属性が消えてしまいます。
   これは画像のサイズによってはサイズの変更が伴うので、わざと消しています。
   ページアクセス時に毎回画像を読み込んでwidthとheightを調べて出力してもいいの
   ですが、負荷が気になるので実装していません。
-  
 
