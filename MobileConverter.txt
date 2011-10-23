@@ -370,9 +370,28 @@ if( $this->Event->name == 'OnLoadWebDocument' ||
             $mcFlag = false;
           }
           if( $mcFlag == true ){
+            MC_pnt('Group,Rule match.',"groupno=$i\nrule=$j\nAgent=$targetVal");
+            $MC_eof = isset($enableOutEffect) ? $enableOutEffect : 'no';
+            $MC_eof = isset(${'g'.$i.'_enableOutEffect'}) ? ${'g'.$i.'_enableOutEffect'} : $MC_eof;
+            if( $MC_eof == 'yes' ){
+              $MC_Enable = isset($_COOKIE['MC_Eneble']) ? $_COOKIE['MC_Eneble'] : 'on';
+              if( isset($_REQUEST['MC_Eneble']) ){
+                if( $_REQUEST['MC_Eneble'] == 'on' ){
+                  $MC_Enable = 'on';
+                }else{
+                  $MC_Enable = 'off';
+                }
+              }
+              if( !isset($_COOKIE['MC_Eneble']) || (isset($_COOKIE['MC_Eneble']) && $_COOKIE['MC_Eneble'] != $MC_Enable) ){
+                setcookie('MC_Eneble',$MC_Enable);
+              }
+              if( $MC_Enable == 'off' ){
+                MC_pnt('MC Skip.',"MC Skip");
+                break 3; //全てのループを抜ける(MCは機能しない)
+              }
+            }
             $groupNo = $i;
             $ruleNo = $j;
-            MC_pnt('Group,Rule match.',"groupno=$groupNo\nrule=$ruleNo\nAgent=$targetVal");
             break 3; //全てのループを抜ける
           }
         }	
