@@ -26,6 +26,7 @@ MobileConverter for MODx - changelog.txt
     問題を修正
   ・画像パスに"."が含まれている場合に正常に動作しない問題を修正
   ・realpath()処理でエラーになる問題を修正
+  ・&enableCharConvが継承されない問題を修正
 
   [Special thanks]
     MEGUさん

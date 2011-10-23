@@ -467,7 +467,9 @@ if( isset($groupNo) &&
   }
 
   //文字コード変換の有無
-  if( ${'g'.$groupNo.'_'.$ruleNo.'_enableCharConv'} == 'no' ){
+  $mcConf['enableCharConv'] = isset($enableCharConv) ? $enableCharConv : 'no';
+  $mcConf['enableCharConv'] = isset(${'g'.$groupNo.'_enableCharConv'}) ? ${'g'.$groupNo.'_enableCharConv'} : $mcConf['enableCharConv'];
+  if( $mcConf['enableCharConv'] == 'no' ){
     $mcConf['enableCharConv'] = false;
   }else{
     $mcConf['enableCharConv'] = true;
