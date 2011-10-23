@@ -3,7 +3,7 @@
 //  MobileConverter for MODX
 //
 //  Author  : soushi
-//  Version : 2.01rc1
+//  Version : 2.10
 //
 //  License : GPL
 //
