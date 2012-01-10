@@ -3,6 +3,10 @@ MobileConverter for MODx - changelog.txt
 --------------------------------------------
 
 [更新履歴]
+2012/xx/xx - 2.11
+  [バグ修正]
+  ・MC_Enableのスペルミス(MC_Enebleになっていた)
+
 2011/10/23 - 2.10
   [機能追加]
   ・&g[groupNo]_[ruleNo]_matchStr に機能追加/修正

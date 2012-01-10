@@ -374,16 +374,16 @@ if( $this->Event->name == 'OnLoadWebDocument' ||
             $MC_eof = isset($enableOutEffect) ? $enableOutEffect : 'no';
             $MC_eof = isset(${'g'.$i.'_enableOutEffect'}) ? ${'g'.$i.'_enableOutEffect'} : $MC_eof;
             if( $MC_eof == 'yes' ){
-              $MC_Enable = isset($_COOKIE['MC_Eneble']) ? $_COOKIE['MC_Eneble'] : 'on';
-              if( isset($_REQUEST['MC_Eneble']) ){
-                if( $_REQUEST['MC_Eneble'] == 'on' ){
+              $MC_Enable = isset($_COOKIE['MC_Enable']) ? $_COOKIE['MC_Enable'] : 'on';
+              if( isset($_REQUEST['MC_Enable']) ){
+                if( $_REQUEST['MC_Enable'] == 'on' ){
                   $MC_Enable = 'on';
                 }else{
                   $MC_Enable = 'off';
                 }
               }
-              if( !isset($_COOKIE['MC_Eneble']) || (isset($_COOKIE['MC_Eneble']) && $_COOKIE['MC_Eneble'] != $MC_Enable) ){
-                setcookie('MC_Eneble',$MC_Enable);
+              if( !isset($_COOKIE['MC_Enable']) || (isset($_COOKIE['MC_Enable']) && $_COOKIE['MC_Enable'] != $MC_Enable) ){
+                setcookie('MC_Enable',$MC_Enable);
               }
               if( $MC_Enable == 'off' ){
                 MC_pnt('MC Skip.',"MC Skip");

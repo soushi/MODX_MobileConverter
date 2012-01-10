@@ -243,13 +243,13 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
           有効/無効の制御は以下の変数をQUERY_STRINGかPOSTに含めてリクエストさ
           せます。
 
-            キー：MC_Eneble
+            キー：MC_Enable
             値  ：on もしくは off
 
-          MC_Eneble=offを含めてリクエストすることで、そのブラウザ(端末)からの
+          MC_Enable=offを含めてリクエストすることで、そのブラウザ(端末)からの
           アクセスはMCが無効になり、テンプレート/画像の変換が発生しなくなりま
           す。          
-          一旦、無効になるとcookieに情報が保存され、MC_Eneble=onの変数を含めて
+          一旦、無効になるとcookieに情報が保存され、MC_Enable=onの変数を含めて
           リクエストが行われるまでMCは機能しません。
           (もしくはブラウザを一旦落とすとcookieが消えます)
 
@@ -670,10 +670,10 @@ MCの基本動作次のようになり、この動作をプラグイン設定に
   &enableOutEffectが有効になっているので、以下のようにQUERY_STRINGをつけたリンクを用意すると、その
   ブラウザは一時的にMCの変換が無効になります。
 
-    http://example.jp/hoge.html?MC_Eneble=off
+    http://example.jp/hoge.html?MC_Enable=off
     ※POSTで渡しても可
 
-  逆に有効にするにはMC_Eneble=onをつけてリクエストさせてください。
+  逆に有効にするにはMC_Enable=onをつけてリクエストさせてください。
   スマフォでもPC版ページを見せたいときに利用できます。
 
 
